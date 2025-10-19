@@ -2,6 +2,14 @@
 import { createMcpHandler } from "mcp-handler";
 import { z } from "zod";
 
+const CORS_ANY = {
+  "Access-Control-Allow-Origin": "*", // cualquier dominio
+  "Access-Control-Allow-Methods": "GET,POST,PUT,PATCH,DELETE,OPTIONS",
+  // reflejar headers pedidos en preflight o dar una lista común
+  "Access-Control-Allow-Headers": "Content-Type, Authorization",
+  // OJO: si usás "*", NO agregues Access-Control-Allow-Credentials
+};
+
 // Zod schemas for input validation
 const getSpacesSchema = {
   archived: z.boolean().optional().describe("Filter for archived spaces"),
@@ -581,7 +589,8 @@ export function handler(req: Request) {
               ],
             };
           } catch (error: unknown) {
-            const errorMessage = error instanceof Error ? error.message : String(error);
+            const errorMessage =
+              error instanceof Error ? error.message : String(error);
             throw new Error(`Failed to attach file: ${errorMessage}`);
           }
         }
@@ -960,7 +969,8 @@ export function handler(req: Request) {
               ],
             };
           } catch (error: unknown) {
-            const errorMessage = error instanceof Error ? error.message : String(error);
+            const errorMessage =
+              error instanceof Error ? error.message : String(error);
             throw new Error(`Failed to build hierarchy: ${errorMessage}`);
           }
         }
@@ -1003,4 +1013,53 @@ export function handler(req: Request) {
 //   required: true, // Make auth required for all requests
 // });
 
-export { handler as GET, handler as POST };
+export async function OPTIONS(req: Request) {
+  // si querés reflejar headers pedidos dinámicamente:
+  const requested = req.headers.get("access-control-request-headers");
+  const headers = { ...CORS_ANY };
+  if (requested) headers["Access-Control-Allow-Headers"] = requested;
+
+  return new Response(null, { status: 204, headers });
+}
+
+export async function GET(req: Request) {
+  const url = new URL(req.url);
+  const apiKey =
+    url.searchParams.get("x-api-key") || req.headers.get("x-api-key");
+  if (apiKey) {
+    req.headers.set("x-api-key", apiKey);
+  }
+
+  const response = await handler(req);
+  response.headers.set("Access-Control-Allow-Origin", "*");
+  response.headers.set(
+    "Access-Control-Allow-Methods",
+    "GET,POST,PUT,PATCH,DELETE,OPTIONS"
+  );
+  response.headers.set(
+    "Access-Control-Allow-Headers",
+    "Content-Type, Authorization"
+  );
+  return response;
+}
+
+export async function POST(req: Request) {
+  const url = new URL(req.url);
+  const apiKey =
+    url.searchParams.get("x-api-key") || req.headers.get("x-api-key");
+  if (apiKey) {
+    req.headers.set("x-api-key", apiKey);
+  }
+
+  const response = await handler(req);
+  response.headers.set("Access-Control-Allow-Origin", "*");
+  response.headers.set(
+    "Access-Control-Allow-Methods",
+    "GET,POST,PUT,PATCH,DELETE,OPTIONS"
+  );
+  response.headers.set(
+    "Access-Control-Allow-Headers",
+    "Content-Type, Authorization"
+  );
+  return response;
+}
