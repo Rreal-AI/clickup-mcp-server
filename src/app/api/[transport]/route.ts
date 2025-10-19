@@ -1,6 +1,5 @@
 // app/api/[transport]/route.ts
-import { AuthInfo } from "@modelcontextprotocol/sdk/server/auth/types.js";
-import { createMcpHandler, withMcpAuth } from "mcp-handler";
+import { createMcpHandler } from "mcp-handler";
 import { z } from "zod";
 
 // Zod schemas for input validation
@@ -188,7 +187,7 @@ export function handler(req: Request) {
               {
                 type: "text",
                 text: JSON.stringify(
-                  data.spaces.map((space: any) => ({
+                  data.spaces.map((space: { id: string; name: string }) => ({
                     id: space.id,
                     name: space.name,
                   })),
@@ -273,7 +272,7 @@ export function handler(req: Request) {
 
           const url = new URL(`https://api.clickup.com/api/v2/task/${task_id}`);
 
-          const body: any = {};
+          const body: Record<string, unknown> = {};
           if (name !== undefined) body.name = name;
           if (description !== undefined) body.description = description;
           if (status !== undefined) body.status = status;
@@ -332,7 +331,7 @@ export function handler(req: Request) {
             `https://api.clickup.com/api/v2/list/${list_id}/task`
           );
 
-          const body: any = { name };
+          const body: Record<string, unknown> = { name };
           if (description !== undefined) body.description = description;
           if (status !== undefined) body.status = status;
           if (priority !== undefined) body.priority = priority;
@@ -581,10 +580,9 @@ export function handler(req: Request) {
                 },
               ],
             };
-          } catch (error: any) {
-            throw new Error(
-              `Failed to attach file: ${error.message || String(error)}`
-            );
+          } catch (error: unknown) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            throw new Error(`Failed to attach file: ${errorMessage}`);
           }
         }
       );
@@ -904,8 +902,6 @@ export function handler(req: Request) {
                 ? (await folderlessListsResponse.json()).lists || []
                 : [];
 
-              const totalItems = folders.length + folderlessLists.length;
-
               // Process folders
               for (let j = 0; j < folders.length; j++) {
                 const folder = folders[j];
@@ -963,10 +959,9 @@ export function handler(req: Request) {
                 },
               ],
             };
-          } catch (error: any) {
-            throw new Error(
-              `Failed to build hierarchy: ${error.message || String(error)}`
-            );
+          } catch (error: unknown) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            throw new Error(`Failed to build hierarchy: ${errorMessage}`);
           }
         }
       );
