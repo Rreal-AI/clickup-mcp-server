@@ -69,6 +69,19 @@ const createTaskSchema = {
     .optional()
     .describe("Array of user IDs to assign"),
   tags: z.array(z.string()).optional().describe("Array of tag names"),
+  custom_fields: z
+    .array(
+      z.object({
+        id: z.string().describe("Custom field ID"),
+        value: z
+          .union([z.string(), z.number(), z.boolean(), z.null()])
+          .describe("Custom field value"),
+      })
+    )
+    .optional()
+    .describe(
+      "Array of custom field objects with id and value properties. Each custom field must have an id (string) and a value that matches the field type (string, number, boolean, or null)"
+    ),
 };
 
 const getWorkspaceTasksSchema = {
@@ -330,6 +343,7 @@ export function handler(req: Request) {
           priority,
           assignees,
           tags,
+          custom_fields,
         }) => {
           if (!apiKey) {
             throw new Error("API key is required");
@@ -345,6 +359,7 @@ export function handler(req: Request) {
           if (priority !== undefined) body.priority = priority;
           if (assignees !== undefined) body.assignees = assignees;
           if (tags !== undefined) body.tags = tags;
+          if (custom_fields !== undefined) body.custom_fields = custom_fields;
 
           const response = await fetch(url.toString(), {
             method: "POST",
@@ -983,35 +998,6 @@ export function handler(req: Request) {
     }
   )(req);
 }
-
-// // Wrap your handler with authorization
-// const verifyToken = async (
-//   req: Request,
-//   bearerToken?: string
-// ): Promise<AuthInfo | undefined> => {
-//   const url = new URL(req.url);
-
-//   const teamId =
-//     req.headers.get("x-team-id") ||
-//     url.searchParams.get("teamId") ||
-//     process.env.CLICKUP_TEAM_ID;
-//   const apiKey =
-//     req.headers.get("x-api-key") ||
-//     url.searchParams.get("apiKey") ||
-//     process.env.CLICKUP_API_KEY;
-
-//   return {
-//     clientId: "mcp-clickup",
-//     scopes: [],
-//     token: apiKey as string,
-//     extra: { teamId, apiKey },
-//   };
-// };
-
-// // Make authorization required
-// const authHandler = withMcpAuth(handler, verifyToken, {
-//   required: true, // Make auth required for all requests
-// });
 
 export async function OPTIONS(req: Request) {
   // si querés reflejar headers pedidos dinámicamente:
