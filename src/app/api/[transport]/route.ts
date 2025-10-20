@@ -74,7 +74,13 @@ const createTaskSchema = {
       z.object({
         id: z.string().describe("Custom field ID"),
         value: z
-          .union([z.string(), z.number(), z.boolean(), z.null()])
+          .union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.string().array(),
+            z.null(),
+          ])
           .describe("Custom field value"),
       })
     )
